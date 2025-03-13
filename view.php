@@ -61,7 +61,7 @@ include_once("./includes/__header__.php");
 include_once("./includes/__navbar__.php");
 ?>
 
-
+    
     <!-- Main Content -->
     <main class="container mx-auto px-6 pt-28 pb-16">
         <!-- Password Protected View -->
