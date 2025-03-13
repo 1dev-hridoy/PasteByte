@@ -1,6 +1,9 @@
 require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' }});
 require(["vs/editor/editor.main"], function () {
-    let editor = monaco.editor.create(document.getElementById("editor"), {
+    console.log("Monaco editor loaded");
+    
+    // Create the editor and make it globally accessible
+    window.editor = monaco.editor.create(document.getElementById("editor"), {
         value: "// Welcome to PasteByte Code Editor\n// Start coding here...\n\nconsole.log('Hello, world!');\n\n// Try our intelligent code completion\n// Type 'fetch' or 'async' and press Ctrl+Space",
         language: "javascript",
         theme: "vs-dark",
@@ -18,16 +21,24 @@ require(["vs/editor/editor.main"], function () {
         padding: { top: 16 }
     });
 
-    document.getElementById("language").addEventListener("change", function () {
-        monaco.editor.setModelLanguage(editor.getModel(), this.value);
-        
-        // Add a subtle animation when changing language
-        const editorElement = document.getElementById("editor");
-        editorElement.classList.add('animate-pulse');
-        setTimeout(() => {
-            editorElement.classList.remove('animate-pulse');
-        }, 500);
-    });
+    // Notify that the editor is ready
+    console.log("Editor initialized and globally accessible as window.editor");
+    
+    const languageSelect = document.getElementById("language-select");
+    if (languageSelect) {
+        languageSelect.addEventListener("change", function () {
+            monaco.editor.setModelLanguage(window.editor.getModel(), this.value);
+            
+            // Add a subtle animation when changing language
+            const editorElement = document.getElementById("editor");
+            editorElement.classList.add('animate-pulse');
+            setTimeout(() => {
+                editorElement.classList.remove('animate-pulse');
+            }, 500);
+        });
+    } else {
+        console.error("Language select element not found");
+    }
 
     document.getElementById("theme").addEventListener("change", function () {
         monaco.editor.setTheme(this.value);
@@ -45,7 +56,7 @@ require(["vs/editor/editor.main"], function () {
     });
 
     document.getElementById("runCode").addEventListener("click", function () {
-        let code = editor.getValue();
+        let code = window.editor.getValue();
         let outputElement = document.getElementById("output");
         let outputContent = document.getElementById("output-content");
         
@@ -87,10 +98,10 @@ require(["vs/editor/editor.main"], function () {
     });
 
     document.getElementById("downloadCode").addEventListener("click", function () {
-        let blob = new Blob([editor.getValue()], { type: "text/plain" });
+        let blob = new Blob([window.editor.getValue()], { type: "text/plain" });
         let a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = `code.${document.getElementById("language").value}`;
+        a.download = `code.${languageSelect.value}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -114,12 +125,11 @@ require(["vs/editor/editor.main"], function () {
         if (file) {
             let reader = new FileReader();
             reader.onload = function (e) {
-                editor.setValue(e.target.result);
+                window.editor.setValue(e.target.result);
                 
                 // Auto-detect language based on file extension
                 const fileName = file.name;
                 const extension = fileName.split('.').pop().toLowerCase();
-                const languageSelect = document.getElementById("language");
                 
                 const extensionMap = {
                     'js': 'javascript',
@@ -142,7 +152,7 @@ require(["vs/editor/editor.main"], function () {
                 
                 if (extensionMap[extension]) {
                     languageSelect.value = extensionMap[extension];
-                    monaco.editor.setModelLanguage(editor.getModel(), extensionMap[extension]);
+                    monaco.editor.setModelLanguage(window.editor.getModel(), extensionMap[extension]);
                 }
                 
                 // Show a temporary notification
@@ -171,56 +181,56 @@ require(["vs/editor/editor.main"], function () {
                         label: 'console.log',
                         kind: monaco.languages.CompletionItemKind.Function,
                         insertText: 'console.log($1);',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsPasteByte,
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "Logs output to the console"
                     },
                     {
                         label: 'fetch',
                         kind: monaco.languages.CompletionItemKind.Function,
                         insertText: 'fetch("${1:url}")\n\t.then(response => response.json())\n\t.then(data => console.log(data))\n\t.catch(error => console.error(error));',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsPasteByte,
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "Fetch API call"
                     },
                     {
                         label: 'async function',
-                        kind: monaco.languages.CompletionItemKind.PasteByte,
+                        kind: monaco.languages.CompletionItemKind.Snippet,
                         insertText: 'async function ${1:name}() {\n\ttry {\n\t\t$0\n\t} catch (error) {\n\t\tconsole.error(error);\n\t}\n}',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsPasteByte,
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "Creates an async function with error handling"
                     },
                     {
                         label: 'setTimeout',
                         kind: monaco.languages.CompletionItemKind.Function,
                         insertText: 'setTimeout(() => {\n\t$0\n}, ${1:1000});',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsPasteByte,
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "Executes code after a specified delay (in milliseconds)"
                     },
                     {
                         label: 'for loop',
-                        kind: monaco.languages.CompletionItemKind.PasteByte,
+                        kind: monaco.languages.CompletionItemKind.Snippet,
                         insertText: 'for (let ${1:i} = 0; ${1:i} < ${2:array}.length; ${1:i}++) {\n\t$0\n}',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsPasteByte,
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "Standard for loop"
                     },
                     {
                         label: 'forEach',
-                        kind: monaco.languages.CompletionItemKind.PasteByte,
+                        kind: monaco.languages.CompletionItemKind.Snippet,
                         insertText: '${1:array}.forEach((${2:item}) => {\n\t$0\n});',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsPasteByte,
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "Array forEach method"
                     },
                     {
                         label: 'map',
-                        kind: monaco.languages.CompletionItemKind.PasteByte,
+                        kind: monaco.languages.CompletionItemKind.Snippet,
                         insertText: 'const ${1:newArray} = ${2:array}.map((${3:item}) => {\n\treturn $0;\n});',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsPasteByte,
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "Array map method"
                     },
                     {
                         label: 'filter',
-                        kind: monaco.languages.CompletionItemKind.PasteByte,
+                        kind: monaco.languages.CompletionItemKind.Snippet,
                         insertText: 'const ${1:filteredArray} = ${2:array}.filter((${3:item}) => {\n\treturn $0;\n});',
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsPasteByte,
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                         documentation: "Array filter method"
                     }
                 ]
@@ -229,11 +239,11 @@ require(["vs/editor/editor.main"], function () {
     });
 
     // Add keyboard shortcuts
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function() {
+    window.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, function() {
         document.getElementById("downloadCode").click();
     });
     
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyR, function() {
+    window.editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyR, function() {
         document.getElementById("runCode").click();
     });
 
@@ -243,4 +253,14 @@ require(["vs/editor/editor.main"], function () {
         editorElement.style.transition = "box-shadow 0.5s ease";
         editorElement.style.boxShadow = "0 0 30px rgba(99, 102, 241, 0.3)";
     }, 1000);
+    
+    // Add an event listener to the editor for content changes
+    window.editor.onDidChangeModelContent(function() {
+        if (typeof updateEditorValues === 'function') {
+            updateEditorValues();
+        }
+    });
+
+    // Test that the editor is working
+    console.log("Editor content length: " + window.editor.getValue().length);
 });
