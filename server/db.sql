@@ -30,3 +30,13 @@ CREATE TABLE views (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (code_id) REFERENCES some_table(id) ON DELETE CASCADE
 );
+
+
+-- Code copies table
+CREATE TABLE copy (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code_id INT NOT NULL,
+    copied INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (code_id) REFERENCES some_table(id) ON DELETE CASCADE
+);
