@@ -20,3 +20,13 @@ CREATE TABLE code_passwords (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (code_id) REFERENCES codes(id) ON DELETE CASCADE
 );
+
+
+-- Views table
+CREATE TABLE views (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    code_id INT NOT NULL,
+    views INT DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (code_id) REFERENCES some_table(id) ON DELETE CASCADE
+);
