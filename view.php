@@ -83,6 +83,37 @@ if ($codeData['privacy'] === 'private') {
     }
 }
 
+// Handle copy count update if requested
+if (isset($_GET['action']) && $_GET['action'] === 'updateCopyCount' && isset($_GET['code_id'])) {
+    $codeId = (int)$_GET['code_id'];
+    $copyQuery = "SELECT * FROM copy WHERE code_id = :code_id";
+    $copyStmt = $db->prepare($copyQuery);
+    $copyStmt->bindParam(':code_id', $codeId);
+    $copyStmt->execute();
+    $copyData = $copyStmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($copyData) {
+        // Update existing copy count
+        $copied = $copyData['copied'] + 1;
+        $updateCopyQuery = "UPDATE copy SET copied = :copied WHERE code_id = :code_id";
+        $updateCopyStmt = $db->prepare($updateCopyQuery);
+        $updateCopyStmt->bindParam(':copied', $copied);
+        $updateCopyStmt->bindParam(':code_id', $codeId);
+        $updateCopyStmt->execute();
+    } else {
+        // Insert new copy count
+        $copied = 1;
+        $insertCopyQuery = "INSERT INTO copy (code_id, copied) VALUES (:code_id, :copied)";
+        $insertCopyStmt = $db->prepare($insertCopyQuery);
+        $insertCopyStmt->bindParam(':code_id', $codeId);
+        $insertCopyStmt->bindParam(':copied', $copied);
+        $insertCopyStmt->execute();
+    }
+
+    echo json_encode(['success' => true]);
+    exit;
+}
+
 include_once("./includes/__header__.php");
 include_once("./includes/__navbar__.php");
 ?>
@@ -185,12 +216,24 @@ include_once("./includes/__navbar__.php");
                 const originalText = copyBtn.innerHTML;
                 copyBtn.innerHTML = '<i class="fas fa-check mr-2"></i> Copied!';
                 
+                // Update copy count in the database
+                fetch(`index.php?action=updateCopyCount&code_id=<?php echo $codeId; ?>`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            console.log('Copy count updated successfully');
+                        } else {
+                            console.error('Failed to update copy count');
+                        }
+                    });
+
                 setTimeout(() => {
                     copyBtn.innerHTML = originalText;
                 }, 2000);
             });
         });
     </script>
+
 <?php
 include_once("./includes/__footer__.php"); 
 ?>
