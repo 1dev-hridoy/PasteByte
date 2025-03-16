@@ -13,7 +13,15 @@ $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $limit = 8; // Number of snippets per page
 $offset = ($page - 1) * $limit;
 
-$query = "SELECT * FROM codes WHERE privacy = 'public' AND (title LIKE :search OR description LIKE :search) LIMIT :limit OFFSET :offset";
+$query = "
+    SELECT codes.*, 
+           COALESCE(views.views, 0) AS total_views, 
+           COALESCE(copy.copied, 0) AS total_copied 
+    FROM codes
+    LEFT JOIN views ON codes.id = views.code_id
+    LEFT JOIN copy ON codes.id = copy.code_id
+    WHERE codes.privacy = 'public' AND (codes.title LIKE :search OR codes.description LIKE :search)
+    LIMIT :limit OFFSET :offset";
 $stmt = $conn->prepare($query);
 $stmt->bindValue(':search', '%' . $searchQuery . '%', PDO::PARAM_STR);
 $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
@@ -21,7 +29,10 @@ $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $snippets = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$totalQuery = "SELECT COUNT(*) FROM codes WHERE privacy = 'public' AND (title LIKE :search OR description LIKE :search)";
+$totalQuery = "
+    SELECT COUNT(*) 
+    FROM codes 
+    WHERE privacy = 'public' AND (title LIKE :search OR description LIKE :search)";
 $totalStmt = $conn->prepare($totalQuery);
 $totalStmt->bindValue(':search', '%' . $searchQuery . '%', PDO::PARAM_STR);
 $totalStmt->execute();
@@ -74,8 +85,8 @@ $totalPages = ceil($totalSnippets / $limit);
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-gray-500">Added <?php echo date('F j, Y', strtotime($snippet['created_at'])); ?></span>
                         <div class="flex space-x-2">
-                            <span class="text-primary"><i class="far fa-eye"></i> 245</span>
-                            <span class="text-primary"><i class="far fa-copy"></i> 78</span>
+                            <span class="text-primary"><i class="far fa-eye"></i> <?php echo $snippet['total_views']; ?></span>
+                            <span class="text-primary"><i class="far fa-copy"></i> <?php echo $snippet['total_copied']; ?></span>
                         </div>
                     </div>
                 </div>
